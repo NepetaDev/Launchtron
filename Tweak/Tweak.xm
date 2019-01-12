@@ -9,6 +9,7 @@ static int ltMode = 0;
 static int ltSide = 0;
 static int ltStyle = 0;
 static int ltMaxApps = 3;
+static float ltAnimationMultiplier = 1.0;
 static bool ltFollowVertical = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
 static NSMutableArray* windows = [NSMutableArray new];
@@ -186,7 +187,7 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
     }
 
     if (animateIcons) {
-        [UIView animateWithDuration:(0.2) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        [UIView animateWithDuration:(0.2*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             for (LTIconView *icon in self.iconViews) {
                 icon.frame = [self getEndingFrameForIcon:icon];
             }
@@ -201,7 +202,7 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
         if (self.alpha != 1.0) self.alpha = 0.0;
         [self.superview bringSubviewToFront:self];
 
-        [UIView animateWithDuration:(0.3) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        [UIView animateWithDuration:(0.3*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             self.alpha = 1.0;
             for (LTIconView *icon in self.iconViews) {
                 icon.frame = [self getEndingFrameForIcon:icon];
@@ -211,14 +212,14 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
         self.alpha = 1.0;
         [self.superview bringSubviewToFront:self];
 
-        [UIView animateWithDuration:(0.3) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
+        [UIView animateWithDuration:(0.3*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             self.alpha = 0.0;
             for (LTIconView *icon in self.iconViews) {
                 icon.frame = [self getStartingFrameForIcon:icon];
             }
         } completion:NULL];
 
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (0.3) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (0.3*ltAnimationMultiplier) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             self.hidden = YES;
         });
     }
@@ -371,6 +372,9 @@ void LTPreferencesChanged() {
     ltMaxApps = (int)[([preferences objectForKey:@"MaxIcons"] ?: @(3.0)) doubleValue];
     ltFollowVertical = [([preferences objectForKey:@"FollowVertical"] ?: @(NO)) boolValue];
 
+    int speed = [([preferences objectForKey:@"AnimationSpeed"] ?: @(5)) intValue];
+    ltAnimationMultiplier = (10.0-speed)*2.0/10.0;
+    
     HBPreferences *disabled = [[HBPreferences alloc] initWithIdentifier:LTDisableFile];
 
     NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
