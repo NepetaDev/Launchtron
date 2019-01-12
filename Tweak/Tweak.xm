@@ -141,8 +141,8 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 -(void)setSide:(int)side {
     if (self.currentSide == side) return;
-    
     self.currentSide = side;
+    
     if (side == 0) {
         self.swipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
 
@@ -272,7 +272,6 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
     [self ltAddView];
     [self ltAddGestureRecognizer];
-    [self ltSetSide:MAX(ltSide, 1)];
 
     if (ltMode != LTModeDisabled) {
         [self ltEnable];
@@ -290,6 +289,7 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltEnable {
+    [self ltSetSide:ltSide];
     [self.ltView updateIcons];
     [self addSubview:self.ltView];
     [self addGestureRecognizer:self.ltLeftGestureRecognizer];
@@ -308,6 +308,8 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltSetSide:(int)side {
+    if (side == 2) side = 0;
+
     if (side == 0) {
         self.ltView.frame = CGRectMake(self.frame.size.width/2, self.frame.origin.y, self.frame.size.width/2, self.frame.size.height);
     } else {
