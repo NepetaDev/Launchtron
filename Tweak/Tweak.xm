@@ -369,7 +369,7 @@ void LTPreferencesChanged() {
     ltMode = [([preferences objectForKey:LTEnabled] ?: @(2)) intValue];
     ltSide = [([preferences objectForKey:@"Side"] ?: @(0)) intValue];
     ltStyle = [([preferences objectForKey:@"Style"] ?: @(0)) intValue];
-    ltMaxApps = (int)[([preferences objectForKey:@"MaxIcons"] ?: @(3.0)) doubleValue];
+    ltMaxApps = [([preferences objectForKey:@"MaxIcons"] ?: @(3)) intValue];
     ltFollowVertical = [([preferences objectForKey:@"FollowVertical"] ?: @(NO)) boolValue];
 
     int speed = [([preferences objectForKey:@"AnimationSpeed"] ?: @(5)) intValue];

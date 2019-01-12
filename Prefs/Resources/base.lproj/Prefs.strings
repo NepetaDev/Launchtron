@@ -6,7 +6,7 @@
   "APPS_SELECT" = "Select apps to show";
   "APPS_DISABLE" = "Disable Launchtron in applications";
   "APPS" = "Applications";
-  "MAX_ICONS" = "Max icons (recent apps)";
+  "MAX_ICONS" = "Recent apps: Maximum";
   "RIGHT" = "Right";
   "LEFT" = "Left";
   "DYNAMIC" = "Dynamic";
