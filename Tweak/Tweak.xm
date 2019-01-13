@@ -391,8 +391,11 @@ void LTPreferencesChanged() {
     [self addSubview:self.ltView];
 
     if (!ltDisableSwipe && (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer)) {
-        [self addGestureRecognizer:self.ltLeftGestureRecognizer];
-        [self addGestureRecognizer:self.ltRightGestureRecognizer];
+        [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
+        [self removeGestureRecognizer:self.ltRightGestureRecognizer];
+        
+        if (ltSide != 0) [self addGestureRecognizer:self.ltLeftGestureRecognizer];
+        if (ltSide != 1) [self addGestureRecognizer:self.ltRightGestureRecognizer];
     }
 }
 
