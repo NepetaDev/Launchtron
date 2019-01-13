@@ -3,7 +3,7 @@ Name: Launchtron
 Version: 0.1.0
 Architecture: iphoneos-arm
 Description: Fast circular app launcher
-Depends: mobilesubstrate, ws.hbang.common (>= 1.11), firmware (>= 7.0), applist
+Depends: mobilesubstrate, ws.hbang.common (>= 1.11), firmware (>= 4.0), applist
 Maintainer: Nepeta <ominousness@protonmail.com>
 Author: Nepeta <ominousness@protonmail.com>
 Section: Tweaks
