@@ -76,8 +76,11 @@ void LTPreferencesChanged() {
     self.hidden = YES;
 
     self.gradientLayer = [CAGradientLayer layer];
-    [self.layer insertSublayer:self.gradientLayer atIndex:0];
     self.gradientLayer.frame = self.bounds;
+    self.gradientLayer.colors = @[(id)[UIColor clearColor].CGColor, (id)[UIColor blackColor].CGColor];
+    self.gradientLayer.startPoint = CGPointMake(0.2, 0);
+    self.gradientLayer.endPoint = CGPointMake(2.0, 0);
+    [self.layer insertSublayer:self.gradientLayer atIndex:0];
 
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap)];
     singleTap.numberOfTapsRequired = 1;
@@ -203,20 +206,20 @@ void LTPreferencesChanged() {
 -(void)setSide:(int)side {
     if (self.currentSide == side) return;
     self.currentSide = side;
-    
+    self.alpha = 0.0;
+
+    [CATransaction begin];
+    [CATransaction setDisableActions:YES];
+
     if (side == 0) {
         self.swipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
-
-        self.gradientLayer.colors = @[(id)[UIColor clearColor].CGColor, (id)[UIColor blackColor].CGColor];
-        self.gradientLayer.startPoint = CGPointMake(0.2, 0);
-        self.gradientLayer.endPoint = CGPointMake(2.0, 0);
+        self.gradientLayer.transform = CATransform3DMakeScale(1, 1, 1);
     } else {
         self.swipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
-
-        self.gradientLayer.colors = @[(id)[UIColor blackColor].CGColor, (id)[UIColor clearColor].CGColor];
-        self.gradientLayer.startPoint = CGPointMake(-1.0, 0);
-        self.gradientLayer.endPoint = CGPointMake(0.8, 0);
+        self.gradientLayer.transform = CATransform3DMakeScale(-1, 1, 1);
     }
+    
+    [CATransaction commit];
 
     for (LTIconView *icon in self.iconViews) {
         icon.frame = [self getStartingFrameForIcon:icon];
