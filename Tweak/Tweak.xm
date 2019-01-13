@@ -21,12 +21,14 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
+    self.currentSide = -1;
 
     [self setUserInteractionEnabled:YES];
     self.hidden = YES;
 
     self.gradientLayer = [CAGradientLayer layer];
     [self.layer insertSublayer:self.gradientLayer atIndex:0];
+    self.gradientLayer.frame = self.bounds;
 
     UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap)];
     singleTap.numberOfTapsRequired = 1;
@@ -53,8 +55,17 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
     int index = [self.iconViews indexOfObject:icon];
     int count = [self.iconViews count];
     CGFloat piVal = (ltStyle == 1) ? M_PI * 2 : M_PI;
-    CGFloat div2 = ((count % 2 == 0) ? -piVal/(count*2) : (-piVal/count)) * (floor(count/2) + self.iconOffset);
-    CGFloat angle = (piVal/count) * (index) + div2;
+    CGFloat alignOffset = 0;
+
+    if ((count % 2 == 0 || ltStyle == 1) && !(count % 2 == 0 && ltStyle == 1)) {
+        alignOffset = -0.5;
+    }
+
+    if (count == 1) {
+        alignOffset = 0;
+    }
+
+    CGFloat angle = (piVal/count) * (index) + (-piVal/count) * (floor(count/2) + alignOffset + self.iconOffset);
     if (self.currentSide == 0) angle += M_PI;
 
     int radius = self.frame.size.width;
@@ -147,16 +158,14 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
     if (side == 0) {
         self.swipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionRight;
 
-        self.gradientLayer.frame = self.bounds;
         self.gradientLayer.colors = @[(id)[UIColor clearColor].CGColor, (id)[UIColor blackColor].CGColor];
         self.gradientLayer.startPoint = CGPointMake(0.2, 0);
-        self.gradientLayer.endPoint = CGPointMake(1.5, 0);
+        self.gradientLayer.endPoint = CGPointMake(2.0, 0);
     } else {
         self.swipeGestureRecognizer.direction = UISwipeGestureRecognizerDirectionLeft;
 
-        self.gradientLayer.frame = self.bounds;
         self.gradientLayer.colors = @[(id)[UIColor blackColor].CGColor, (id)[UIColor clearColor].CGColor];
-        self.gradientLayer.startPoint = CGPointMake(-0.5, 0);
+        self.gradientLayer.startPoint = CGPointMake(-1.0, 0);
         self.gradientLayer.endPoint = CGPointMake(0.8, 0);
     }
 
