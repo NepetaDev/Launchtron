@@ -1,5 +1,6 @@
 include $(THEOS)/makefiles/common.mk
 
+TARGET = iphone:clang:latest:6.0
 BUNDLE_NAME = LaunchtronPrefs
 $(BUNDLE_NAME)_FILES = $(wildcard *.m)
 $(BUNDLE_NAME)_INSTALL_PATH = /Library/PreferenceBundles

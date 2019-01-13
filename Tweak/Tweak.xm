@@ -12,9 +12,24 @@ static int ltStyle = 0;
 static int ltMaxApps = 3;
 static float ltAnimationMultiplier = 1.0;
 static bool ltFollowVertical = false;
+static bool ltDisableSwipe = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
-static NSMutableArray* windows = [NSMutableArray new];
 static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWorkspace") new];
+
+UIWindow* LTGetMainWindow() {
+    return [[[UIApplication sharedApplication] windows] firstObject];
+}
+
+void LTOpen() {
+    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateActive) {
+        if (ltMode != LTModeDisabled) {
+            UIWindow *window = LTGetMainWindow();
+            if (window && window.ltView) {
+                [window.ltView setVisibility:TRUE];
+            }
+        }
+    }
+}
 
 void LTAppChanged() {
     NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
@@ -22,10 +37,9 @@ void LTAppChanged() {
     [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
 
     if (ltMode != LTModeDisabled) {
-        for (UIWindow *window in windows) {
-            if (window && window.ltView) {
-                window.ltView.hidden = YES;
-            }
+        UIWindow *window = LTGetMainWindow();
+        if (window && window.ltView) {
+            window.ltView.hidden = YES;
         }
     }
 
@@ -38,6 +52,7 @@ void LTPreferencesChanged() {
     ltStyle = [([preferences objectForKey:@"Style"] ?: @(0)) intValue];
     ltMaxApps = [([preferences objectForKey:@"MaxIcons"] ?: @(3)) intValue];
     ltFollowVertical = [([preferences objectForKey:@"FollowVertical"] ?: @(NO)) boolValue];
+    ltDisableSwipe = [([preferences objectForKey:@"DisableSwipe"] ?: @(NO)) boolValue];
 
     int speed = [([preferences objectForKey:@"AnimationSpeed"] ?: @(5)) intValue];
     ltAnimationMultiplier = (10.0-speed)*2.0/10.0;
@@ -49,17 +64,14 @@ void LTPreferencesChanged() {
         ltMode = LTModeDisabled;
     }
 
+    UIWindow *window = LTGetMainWindow();
     if (ltMode == LTModeDisabled) {
-        for (UIWindow *window in windows) {
-            if (window) {
-                [window ltDisable];
-            }
+        if (window) {
+            [window ltDisable];
         }
     } else {
-        for (UIWindow *window in windows) {
-            if (window) {
-                [window ltEnable];
-            }
+        if (window) {
+            [window ltEnable];
         }
     }
 }
@@ -327,6 +339,8 @@ void LTPreferencesChanged() {
 
 -(void)layoutSubviews {
     %orig;
+
+    if (LTGetMainWindow() != self) return;
     
     if (ltInit == 0) {
         LTAppChanged();
@@ -334,15 +348,12 @@ void LTPreferencesChanged() {
 
         CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, (CFNotificationCallback)LTAppChanged, (CFStringRef)UIApplicationDidBecomeActiveNotification, NULL, kNilOptions);
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)LTPreferencesChanged, (CFStringRef)LTNotification, NULL, kNilOptions);
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)LTOpen, (CFStringRef)LTOpenNotification, NULL, kNilOptions);
         ltInit = 1;
     }
     
     if (self.ltView) {
         self.ltView.iconOffset = 0;
-    }
-    
-    if (![windows containsObject:self]) {
-        [windows addObject:self];
     }
 
     [self ltAddView];
@@ -372,8 +383,11 @@ void LTPreferencesChanged() {
     [self ltSetSide:ltSide];
     [self.ltView updateIcons];
     [self addSubview:self.ltView];
-    [self addGestureRecognizer:self.ltLeftGestureRecognizer];
-    [self addGestureRecognizer:self.ltRightGestureRecognizer];
+
+    if (!ltDisableSwipe) {
+        [self addGestureRecognizer:self.ltLeftGestureRecognizer];
+        [self addGestureRecognizer:self.ltRightGestureRecognizer];
+    }
 }
 
 %new;
