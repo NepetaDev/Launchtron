@@ -40,6 +40,7 @@ void LTAppChanged() {
         UIWindow *window = LTGetMainWindow();
         if (window && window.ltView) {
             window.ltView.hidden = YES;
+            [window.ltView updateIcons];
         }
     }
 
