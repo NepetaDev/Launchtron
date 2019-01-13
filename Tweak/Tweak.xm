@@ -5,6 +5,7 @@
 
 #define ICON_SIZE 59
 
+static int ltInit = 0;
 static int ltMode = 0;
 static int ltSide = 0;
 static int ltStyle = 0;
@@ -14,6 +15,54 @@ static bool ltFollowVertical = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
 static NSMutableArray* windows = [NSMutableArray new];
 static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWorkspace") new];
+
+void LTAppChanged() {
+    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
+    HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTRecentFile];
+    [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
+
+    if (ltMode != LTModeDisabled) {
+        for (UIWindow *window in windows) {
+            if (window && window.ltView) {
+                window.ltView.hidden = YES;
+            }
+        }
+    }
+
+}
+
+void LTPreferencesChanged() {
+    HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTPreferencesIdentifier];
+    ltMode = [([preferences objectForKey:LTEnabled] ?: @(2)) intValue];
+    ltSide = [([preferences objectForKey:@"Side"] ?: @(0)) intValue];
+    ltStyle = [([preferences objectForKey:@"Style"] ?: @(0)) intValue];
+    ltMaxApps = [([preferences objectForKey:@"MaxIcons"] ?: @(3)) intValue];
+    ltFollowVertical = [([preferences objectForKey:@"FollowVertical"] ?: @(NO)) boolValue];
+
+    int speed = [([preferences objectForKey:@"AnimationSpeed"] ?: @(5)) intValue];
+    ltAnimationMultiplier = (10.0-speed)*2.0/10.0;
+    
+    HBPreferences *disabled = [[HBPreferences alloc] initWithIdentifier:LTDisableFile];
+
+    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
+    if ([([disabled objectForKey:bundle] ?: @(0)) intValue] == 1) {
+        ltMode = LTModeDisabled;
+    }
+
+    if (ltMode == LTModeDisabled) {
+        for (UIWindow *window in windows) {
+            if (window) {
+                [window ltDisable];
+            }
+        }
+    } else {
+        for (UIWindow *window in windows) {
+            if (window) {
+                [window ltEnable];
+            }
+        }
+    }
+}
 
 @implementation LTView
 
@@ -276,6 +325,15 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 -(void)layoutSubviews {
     %orig;
     
+    if (ltInit == 0) {
+        LTAppChanged();
+        LTPreferencesChanged();
+
+        CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, (CFNotificationCallback)LTAppChanged, (CFStringRef)UIApplicationDidBecomeActiveNotification, NULL, kNilOptions);
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)LTPreferencesChanged, (CFStringRef)LTNotification, NULL, kNilOptions);
+        ltInit = 1;
+    }
+    
     if (self.ltView) {
         self.ltView.iconOffset = 0;
     }
@@ -372,65 +430,30 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %end
 
-void LTAppChanged() {
-    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
-    HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTRecentFile];
-    [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
-
-    if (ltMode != LTModeDisabled) {
-        for (UIWindow *window in windows) {
-            if (window && window.ltView) {
-                window.ltView.hidden = YES;
-            }
-        }
-    }
-
-}
-
-void LTPreferencesChanged() {
-    HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTPreferencesIdentifier];
-    ltMode = [([preferences objectForKey:LTEnabled] ?: @(2)) intValue];
-    ltSide = [([preferences objectForKey:@"Side"] ?: @(0)) intValue];
-    ltStyle = [([preferences objectForKey:@"Style"] ?: @(0)) intValue];
-    ltMaxApps = [([preferences objectForKey:@"MaxIcons"] ?: @(3)) intValue];
-    ltFollowVertical = [([preferences objectForKey:@"FollowVertical"] ?: @(NO)) boolValue];
-
-    int speed = [([preferences objectForKey:@"AnimationSpeed"] ?: @(5)) intValue];
-    ltAnimationMultiplier = (10.0-speed)*2.0/10.0;
-    
-    HBPreferences *disabled = [[HBPreferences alloc] initWithIdentifier:LTDisableFile];
-
-    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
-    if ([([disabled objectForKey:bundle] ?: @(0)) intValue] == 1) {
-        ltMode = LTModeDisabled;
-    }
-
-    if (ltMode == LTModeDisabled) {
-        for (UIWindow *window in windows) {
-            if (window) {
-                [window ltDisable];
-            }
-        }
-    } else {
-        for (UIWindow *window in windows) {
-            if (window) {
-                [window ltEnable];
-            }
-        }
-    }
-}
-
 %ctor {
-    NSString *processName = [NSProcessInfo processInfo].processName;
-    if ([@"SpringBoard" isEqualToString:processName]) {
-        return;
+    // Someone smarter than me invented this.
+    // https://www.reddit.com/r/jailbreak/comments/4yz5v5/questionremote_messages_not_enabling/d6rlh88/
+    bool shouldLoad = NO;
+    NSArray *args = [[NSClassFromString(@"NSProcessInfo") processInfo] arguments];
+    NSUInteger count = args.count;
+    if (count != 0) {
+        NSString *executablePath = args[0];
+        if (executablePath) {
+            NSString *processName = [executablePath lastPathComponent];
+            BOOL isApplication = [executablePath rangeOfString:@"/Application/"].location != NSNotFound || [executablePath rangeOfString:@"/Applications/"].location != NSNotFound;
+            BOOL isFileProvider = [[processName lowercaseString] rangeOfString:@"fileprovider"].location != NSNotFound;
+            BOOL skip = [processName isEqualToString:@"AdSheet"]
+                        || [processName isEqualToString:@"CoreAuthUI"]
+                        || [processName isEqualToString:@"InCallService"]
+                        || [processName isEqualToString:@"MessagesNotificationViewService"]
+                        || [executablePath rangeOfString:@".appex/"].location != NSNotFound;
+            if (!isFileProvider && isApplication && !skip) {
+                shouldLoad = YES;
+            }
+        }
     }
 
-    LTAppChanged();
-    CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, (CFNotificationCallback)LTAppChanged, (CFStringRef)UIApplicationDidBecomeActiveNotification, NULL, kNilOptions);
-
-    LTPreferencesChanged();
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (CFNotificationCallback)LTPreferencesChanged, (CFStringRef)LTNotification, NULL, kNilOptions);
-
-    %init(Launchtron);
+    if (shouldLoad) {
+        %init(Launchtron);
+    }
 }
