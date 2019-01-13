@@ -70,15 +70,16 @@ void LTPreferencesChanged() {
             [window ltDisable];
         }
     } else {
-        if (window) {
+        if (window && window.ltView) {
             [window ltEnable];
+            [window.ltView updateIcons];
         }
     }
 }
 
 @implementation LTView
 
-@synthesize upGestureRecognizer, downGestureRecognizer, swipeGestureRecognizer, gradientLayer, iconOffset, iconViews, originY, currentSide;
+@synthesize upGestureRecognizer, downGestureRecognizer, swipeGestureRecognizer, gradientLayer, iconOffset, iconViews, originY, currentSide, isOpen;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -269,6 +270,7 @@ void LTPreferencesChanged() {
 }
 
 -(void)setVisibility:(bool)state {
+    self.isOpen = state;
     if (state) {
         self.iconOffset = 0;
         self.hidden = NO;
@@ -381,7 +383,6 @@ void LTPreferencesChanged() {
 
     self.ltView.iconOffset = 0;
     [self ltSetSide:ltSide];
-    [self.ltView updateIcons];
     [self addSubview:self.ltView];
 
     if (!ltDisableSwipe) {
@@ -421,6 +422,7 @@ void LTPreferencesChanged() {
     if (self.ltView) return;
 
     self.ltView = [[LTView alloc] initWithFrame:CGRectMake(self.frame.size.width/2, self.frame.origin.y, self.frame.size.width/2, self.frame.size.height)];
+    [self.ltView updateIcons];
 }
 
 %new;

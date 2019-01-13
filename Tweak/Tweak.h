@@ -31,6 +31,7 @@
 @property (nonatomic, retain) CAGradientLayer* gradientLayer;
 @property (nonatomic, assign) int iconOffset;
 @property (nonatomic, assign) int currentSide;
+@property (nonatomic, assign) bool isOpen;
 @property (nonatomic, retain) NSArray* iconViews;
 @property (nonatomic, assign) CGFloat originY;
 
