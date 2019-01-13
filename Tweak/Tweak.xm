@@ -292,6 +292,8 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltDisable {
+    if (!self.ltView) return;
+    
     [self.ltView removeFromSuperview];
     [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
     [self removeGestureRecognizer:self.ltRightGestureRecognizer];
@@ -299,6 +301,9 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltEnable {
+    if (!self.ltView) return;
+
+    self.ltView.iconOffset = 0;
     [self ltSetSide:ltSide];
     [self.ltView updateIcons];
     [self addSubview:self.ltView];
@@ -400,7 +405,6 @@ void LTPreferencesChanged() {
     } else {
         for (UIWindow *window in windows) {
             if (window) {
-                window.ltView.iconOffset = 0;
                 [window ltEnable];
             }
         }
