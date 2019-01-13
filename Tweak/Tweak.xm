@@ -33,8 +33,10 @@ void LTOpen() {
 
 void LTAppChanged() {
     NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
-    HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTRecentFile];
-    [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
+    if (bundle && getuid() == 501) { // temporary fix for iCleaner
+        HBPreferences *preferences = [[HBPreferences alloc] initWithIdentifier:LTRecentFile];
+        if (preferences) [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
+    }
 
     if (ltMode != LTModeDisabled) {
         UIWindow *window = LTGetMainWindow();
