@@ -15,6 +15,14 @@ static bool ltFollowVertical = false;
 static bool ltDisableSwipe = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
 static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWorkspace") new];
+static NSArray* blackList = @[
+    @"com.apple.NanoTimeKitCompanion",
+    @"com.apple.WebKit.WebContent",
+    @"com.apple.ScreenshotServicesService",
+    @"com.apple.accessibility.AccessibilityUIServer",
+    @"com.apple.BatteryCenter.BatteryWidget",
+    @"com.apple.usbptpd"
+];
 
 UIWindow* LTGetMainWindow() {
     return [[[UIApplication sharedApplication] windows] firstObject];
@@ -203,10 +211,10 @@ void LTPreferencesChanged() {
                 continue;
             }
             if (i == (ltMaxApps + 1)) break;
-            i++;
         }
         LTIconView *icon = [LTIconView iconWithBundleIdentifier:bundle];
         if (icon) {
+            i++;
             [self addSubview:icon];
             [icons addObject:icon];
         }
@@ -310,6 +318,10 @@ void LTPreferencesChanged() {
 @synthesize bundleIdentifier;
 
 +(LTIconView *)iconWithBundleIdentifier:(NSString *)bundle {
+    for (NSString *blacklisted in blackList) {
+        if ([bundle isEqualToString:blacklisted]) return nil;
+    }
+
     UIImage *image = [appList iconOfSize:ALApplicationIconSizeLarge forDisplayIdentifier:bundle];
     if (!image) return nil;
 
@@ -346,7 +358,12 @@ void LTPreferencesChanged() {
     %orig;
 
     if (LTGetMainWindow() != self) return;
-    
+
+    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
+    for (NSString *blacklisted in blackList) {
+        if ([bundle isEqualToString:blacklisted]) return;
+    }
+
     if (ltInit == 0) {
         LTAppChanged();
         LTPreferencesChanged();
@@ -393,7 +410,7 @@ void LTPreferencesChanged() {
     if (!ltDisableSwipe && (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer)) {
         [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
         [self removeGestureRecognizer:self.ltRightGestureRecognizer];
-        
+
         if (ltSide != 0) [self addGestureRecognizer:self.ltLeftGestureRecognizer];
         if (ltSide != 1) [self addGestureRecognizer:self.ltRightGestureRecognizer];
     }
