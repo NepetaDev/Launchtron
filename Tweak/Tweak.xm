@@ -373,8 +373,10 @@ void LTPreferencesChanged() {
     if (!self.ltView) return;
 
     [self.ltView removeFromSuperview];
-    [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
-    [self removeGestureRecognizer:self.ltRightGestureRecognizer];
+    if (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer) {
+        [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
+        [self removeGestureRecognizer:self.ltRightGestureRecognizer];
+    }
 }
 
 %new;
@@ -385,7 +387,7 @@ void LTPreferencesChanged() {
     [self ltSetSide:ltSide];
     [self addSubview:self.ltView];
 
-    if (!ltDisableSwipe) {
+    if (!ltDisableSwipe && (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer)) {
         [self addGestureRecognizer:self.ltLeftGestureRecognizer];
         [self addGestureRecognizer:self.ltRightGestureRecognizer];
     }
@@ -395,11 +397,13 @@ void LTPreferencesChanged() {
 -(void)ltAddGestureRecognizer {
     if (self.ltLeftGestureRecognizer) return;
 
-    self.ltLeftGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]initWithTarget:self action:@selector(ltGestureRecognized:)];
-    self.ltLeftGestureRecognizer.edges = UIRectEdgeLeft;
+    if ([UIScreenEdgePanGestureRecognizer class]) {
+        self.ltLeftGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]initWithTarget:self action:@selector(ltGestureRecognized:)];
+        self.ltLeftGestureRecognizer.edges = UIRectEdgeLeft;
 
-    self.ltRightGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]initWithTarget:self action:@selector(ltGestureRecognized:)];
-    self.ltRightGestureRecognizer.edges = UIRectEdgeRight;
+        self.ltRightGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]initWithTarget:self action:@selector(ltGestureRecognized:)];
+        self.ltRightGestureRecognizer.edges = UIRectEdgeRight;
+    }
 }
 
 %new;
