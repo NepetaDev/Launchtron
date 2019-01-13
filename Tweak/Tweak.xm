@@ -275,7 +275,11 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 -(void)layoutSubviews {
     %orig;
-    self.ltView.iconOffset = 0;
+    
+    if (self.ltView) {
+        self.ltView.iconOffset = 0;
+    }
+    
     if (![windows containsObject:self]) {
         [windows addObject:self];
     }
@@ -293,7 +297,7 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 %new;
 -(void)ltDisable {
     if (!self.ltView) return;
-    
+
     [self.ltView removeFromSuperview];
     [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
     [self removeGestureRecognizer:self.ltRightGestureRecognizer];
@@ -314,6 +318,7 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 %new;
 -(void)ltAddGestureRecognizer {
     if (self.ltLeftGestureRecognizer) return;
+
     self.ltLeftGestureRecognizer = [[UIScreenEdgePanGestureRecognizer alloc]initWithTarget:self action:@selector(ltGestureRecognized:)];
     self.ltLeftGestureRecognizer.edges = UIRectEdgeLeft;
 
@@ -323,6 +328,8 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltSetSide:(int)side {
+    if (!self.ltView) return;
+
     if (side == 2) side = 0;
 
     if (side == 0) {
@@ -343,6 +350,8 @@ static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWor
 
 %new;
 -(void)ltGestureRecognized:(id)gesture {
+    if (!self.ltView) return;
+
     if (ltSide == 2) {
         if (gesture == self.ltLeftGestureRecognizer) {
             [self ltSetSide:1];
@@ -370,7 +379,7 @@ void LTAppChanged() {
 
     if (ltMode != LTModeDisabled) {
         for (UIWindow *window in windows) {
-            if (window) {
+            if (window && window.ltView) {
                 window.ltView.hidden = YES;
             }
         }
