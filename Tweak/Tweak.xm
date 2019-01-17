@@ -15,14 +15,6 @@ static bool ltFollowVertical = false;
 static bool ltDisableSwipe = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
 static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWorkspace") new];
-static NSArray* blackList = @[
-    @"com.apple.NanoTimeKitCompanion",
-    @"com.apple.WebKit.WebContent",
-    @"com.apple.ScreenshotServicesService",
-    @"com.apple.accessibility.AccessibilityUIServer",
-    @"com.apple.BatteryCenter.BatteryWidget",
-    @"com.apple.usbptpd"
-];
 static LTWindow* ltWindow = nil;
 
 UIWindow* LTGetMainWindow() {
@@ -309,9 +301,7 @@ void LTPreferencesChanged() {
 @synthesize bundleIdentifier;
 
 +(LTIconView *)iconWithBundleIdentifier:(NSString *)bundle {
-    for (NSString *blacklisted in blackList) {
-        if ([bundle isEqualToString:blacklisted]) return nil;
-    }
+    if ([appList applicationWithDisplayIdentifierIsHidden:bundle]) return nil;
 
     UIImage *image = [appList iconOfSize:ALApplicationIconSizeLarge forDisplayIdentifier:bundle];
     if (!image) return nil;
@@ -349,10 +339,9 @@ void LTPreferencesChanged() {
 
     if (LTGetMainWindow() != self) return;
 
-    NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
-    for (NSString *blacklisted in blackList) {
-        if ([bundle isEqualToString:blacklisted]) return;
-    }
+    // NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
+    // if ([appList applicationWithDisplayIdentifierIsHidden:bundle]) return;
+    // I'll read this if the lack of it causes issues.
 
     if (ltInit == 0) {
         LTAppChanged();
