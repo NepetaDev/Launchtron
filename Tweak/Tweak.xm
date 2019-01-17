@@ -278,6 +278,7 @@ void LTPreferencesChanged() {
         self.iconOffset = 0;
         [self setHidden: NO];
         if (self.alpha != 1.0) self.alpha = 0.0;
+        [LTGetMainWindow() endEditing:YES];
 
         [UIView animateWithDuration:(0.3*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             self.alpha = 1.0;
