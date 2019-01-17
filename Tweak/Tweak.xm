@@ -23,19 +23,15 @@ static NSArray* blackList = @[
     @"com.apple.BatteryCenter.BatteryWidget",
     @"com.apple.usbptpd"
 ];
+static LTWindow* ltWindow = nil;
 
 UIWindow* LTGetMainWindow() {
     return [[[UIApplication sharedApplication] windows] firstObject];
 }
 
 void LTOpen() {
-    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateActive) {
-        if (ltMode != LTModeDisabled) {
-            UIWindow *window = LTGetMainWindow();
-            if (window && window.ltView) {
-                [window.ltView setVisibility:TRUE];
-            }
-        }
+    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateActive && ltMode != LTModeDisabled && ltWindow) {
+        [ltWindow setVisibility:TRUE];
     }
 }
 
@@ -46,12 +42,9 @@ void LTAppChanged() {
         if (preferences) [preferences setDouble:[[NSDate date] timeIntervalSince1970] forKey:bundle];
     }
 
-    if (ltMode != LTModeDisabled) {
-        UIWindow *window = LTGetMainWindow();
-        if (window && window.ltView) {
-            window.ltView.hidden = YES;
-            [window.ltView updateIcons];
-        }
+    if (ltMode != LTModeDisabled && ltWindow) {
+        [ltWindow setHidden: YES];
+        [ltWindow updateIcons];
     }
 
 }
@@ -80,21 +73,20 @@ void LTPreferencesChanged() {
         if (window) {
             [window ltDisable];
         }
-    } else {
-        if (window && window.ltView) {
-            [window ltEnable];
-            [window.ltView updateIcons];
-        }
+    } else if (window && ltWindow) {
+        [window ltEnable];
+        [ltWindow updateIcons];
     }
 }
 
-@implementation LTView
+@implementation LTWindow
 
 @synthesize upGestureRecognizer, downGestureRecognizer, swipeGestureRecognizer, gradientLayer, iconOffset, iconViews, originY, currentSide, isOpen;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     self.currentSide = -1;
+    self.windowLevel = UIWindowLevelAlert + 1;
 
     [self setUserInteractionEnabled:YES];
     self.hidden = YES;
@@ -102,7 +94,7 @@ void LTPreferencesChanged() {
     self.gradientLayer = [CAGradientLayer layer];
     self.gradientLayer.frame = self.bounds;
     self.gradientLayer.colors = @[(id)[UIColor clearColor].CGColor, (id)[UIColor blackColor].CGColor];
-    self.gradientLayer.startPoint = CGPointMake(0.2, 0);
+    self.gradientLayer.startPoint = CGPointMake(0.5, 0);
     self.gradientLayer.endPoint = CGPointMake(2.0, 0);
     [self.layer insertSublayer:self.gradientLayer atIndex:0];
 
@@ -144,7 +136,7 @@ void LTPreferencesChanged() {
     CGFloat angle = (piVal/count) * (index) + (-piVal/count) * (floor(count/2) + alignOffset + self.iconOffset);
     if (self.currentSide == 0) angle += M_PI;
 
-    int radius = self.frame.size.width;
+    int radius = self.frame.size.width/2;
     CGFloat x = radius*cos(angle);
     CGFloat y = radius*sin(angle);
 
@@ -284,9 +276,8 @@ void LTPreferencesChanged() {
     self.isOpen = state;
     if (state) {
         self.iconOffset = 0;
-        self.hidden = NO;
+        [self setHidden: NO];
         if (self.alpha != 1.0) self.alpha = 0.0;
-        [self.superview bringSubviewToFront:self];
 
         [UIView animateWithDuration:(0.3*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             self.alpha = 1.0;
@@ -296,7 +287,6 @@ void LTPreferencesChanged() {
         } completion:NULL];
     } else {
         self.alpha = 1.0;
-        [self.superview bringSubviewToFront:self];
 
         [UIView animateWithDuration:(0.3*ltAnimationMultiplier) delay:0.0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             self.alpha = 0.0;
@@ -306,7 +296,7 @@ void LTPreferencesChanged() {
         } completion:NULL];
 
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (0.3*ltAnimationMultiplier) * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            self.hidden = YES;
+            [self setHidden: YES];
         });
     }
 }
@@ -338,7 +328,7 @@ void LTPreferencesChanged() {
 
 -(void)handleTap {
     if (self.superview) {
-        [(LTView*)self.superview setVisibility:false];
+        [(LTWindow*)self.superview setVisibility:false];
     }
 
     [workspace openApplicationWithBundleID:self.bundleIdentifier];
@@ -352,7 +342,6 @@ void LTPreferencesChanged() {
 
 %property (nonatomic, retain) UIScreenEdgePanGestureRecognizer* ltLeftGestureRecognizer;
 %property (nonatomic, retain) UIScreenEdgePanGestureRecognizer* ltRightGestureRecognizer;
-%property (nonatomic, retain) LTView* ltView;
 
 -(void)layoutSubviews {
     %orig;
@@ -374,8 +363,8 @@ void LTPreferencesChanged() {
         ltInit = 1;
     }
     
-    if (self.ltView) {
-        self.ltView.iconOffset = 0;
+    if (ltWindow) {
+        ltWindow.iconOffset = 0;
     }
 
     [self ltAddView];
@@ -390,9 +379,9 @@ void LTPreferencesChanged() {
 
 %new;
 -(void)ltDisable {
-    if (!self.ltView) return;
+    if (!ltWindow) return;
 
-    [self.ltView removeFromSuperview];
+    [ltWindow setHidden:YES];
     if (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer) {
         [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
         [self removeGestureRecognizer:self.ltRightGestureRecognizer];
@@ -401,11 +390,10 @@ void LTPreferencesChanged() {
 
 %new;
 -(void)ltEnable {
-    if (!self.ltView) return;
+    if (!ltWindow) return;
 
-    self.ltView.iconOffset = 0;
+    ltWindow.iconOffset = 0;
     [self ltSetSide:ltSide];
-    [self addSubview:self.ltView];
 
     if (!ltDisableSwipe && (self.ltLeftGestureRecognizer || self.ltRightGestureRecognizer)) {
         [self removeGestureRecognizer:self.ltLeftGestureRecognizer];
@@ -431,30 +419,30 @@ void LTPreferencesChanged() {
 
 %new;
 -(void)ltSetSide:(int)side {
-    if (!self.ltView) return;
+    if (!ltWindow) return;
 
     if (side == 2) side = 0;
 
-    if (side == 0) {
+    /*if (side == 0) {
         self.ltView.frame = CGRectMake(self.frame.size.width/2, self.frame.origin.y, self.frame.size.width/2, self.frame.size.height);
     } else {
         self.ltView.frame = CGRectMake(0, self.frame.origin.y, self.frame.size.width/2, self.frame.size.height);
-    }
+    }*/
 
-    [self.ltView setSide:side];
+    [ltWindow setSide:side];
 }
 
 %new;
 -(void)ltAddView {
-    if (self.ltView) return;
+    if (ltWindow) return;
 
-    self.ltView = [[LTView alloc] initWithFrame:CGRectMake(self.frame.size.width/2, self.frame.origin.y, self.frame.size.width/2, self.frame.size.height)];
-    [self.ltView updateIcons];
+    ltWindow = [[LTWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    [ltWindow updateIcons];
 }
 
 %new;
 -(void)ltGestureRecognized:(id)gesture {
-    if (!self.ltView) return;
+    if (!ltWindow) return;
 
     if (ltSide == 2) {
         if (gesture == self.ltLeftGestureRecognizer) {
@@ -468,8 +456,8 @@ void LTPreferencesChanged() {
     }
 
     CGPoint location = [gesture locationInView:self];
-    self.ltView.originY = location.y;
-    [self.ltView setVisibility:true];
+    ltWindow.originY = location.y;
+    [ltWindow setVisibility:true];
 }
 
 %end

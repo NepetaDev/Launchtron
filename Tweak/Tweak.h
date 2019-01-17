@@ -23,7 +23,7 @@
 
 @end
 
-@interface LTView : UIView
+@interface LTWindow : UIWindow
 
 @property (nonatomic, retain) UISwipeGestureRecognizer* upGestureRecognizer;
 @property (nonatomic, retain) UISwipeGestureRecognizer* downGestureRecognizer;
@@ -53,7 +53,6 @@
 
 @property (nonatomic, retain) UIScreenEdgePanGestureRecognizer* ltLeftGestureRecognizer;
 @property (nonatomic, retain) UIScreenEdgePanGestureRecognizer* ltRightGestureRecognizer;
-@property (nonatomic, retain) LTView* ltView;
 
 -(void)ltAddGestureRecognizer;
 -(void)ltAddView;
