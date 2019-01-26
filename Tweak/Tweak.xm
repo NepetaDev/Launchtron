@@ -16,6 +16,66 @@ static bool ltDisableSwipe = false;
 static ALApplicationList* appList = [ALApplicationList sharedApplicationList];
 static LSApplicationWorkspace* workspace = [NSClassFromString(@"LSApplicationWorkspace") new];
 static LTWindow* ltWindow = nil;
+static NSArray* blackList = @[	
+    @"com.apple.NanoTimeKitCompanion",	
+    @"com.apple.WebKit.WebContent",	
+    @"com.apple.ScreenshotServicesService",	
+    @"com.apple.accessibility.AccessibilityUIServer",	
+    @"com.apple.BatteryCenter.BatteryWidget",	
+    @"com.apple.usbptpd",
+    @"com.apple.AdSheet",
+    @"com.apple.AdSheetPhone",
+    @"com.apple.AdSheetPad",
+    @"com.apple.DataActivation",
+    @"com.apple.DemoApp",
+    @"com.apple.Diagnostics",
+    @"com.apple.fieldtest",
+    @"com.apple.iosdiagnostics",
+    @"com.apple.iphoneos.iPodOut",
+    @"com.apple.TrustMe",
+    @"com.apple.WebSheet",
+    @"com.apple.springboard",
+    @"com.apple.purplebuddy",
+    @"com.apple.datadetectors.DDActionsService",
+    @"com.apple.FacebookAccountMigrationDialog",
+    @"com.apple.iad.iAdOptOut",
+    @"com.apple.ios.StoreKitUIService",
+    @"com.apple.TextInput.kbd",
+    @"com.apple.MailCompositionService",
+    @"com.apple.mobilesms.compose",
+    @"com.apple.quicklook.quicklookd",
+    @"com.apple.ShoeboxUIService",
+    @"com.apple.social.remoteui.SocialUIService",
+    @"com.apple.WebViewService",
+    @"com.apple.gamecenter.GameCenterUIService",
+    @"com.apple.appleaccount.AACredentialRecoveryDialog",
+    @"com.apple.CompassCalibrationViewService",
+    @"com.apple.WebContentFilter.remoteUI.WebContentAnalysisUI",
+    @"com.apple.PassbookUIService",
+    @"com.apple.uikit.PrintStatus",
+    @"com.apple.Copilot",
+    @"com.apple.MusicUIService",
+    @"com.apple.AccountAuthenticationDialog",
+    @"com.apple.MobileReplayer",
+    @"com.apple.SiriViewService",
+    @"com.apple.TencentWeiboAccountMigrationDialog",
+    // iOS 8
+    @"com.apple.AskPermissionUI",
+    @"com.apple.CoreAuthUI",
+    @"com.apple.family",
+    @"com.apple.mobileme.fmip1",
+    @"com.apple.GameController",
+    @"com.apple.HealthPrivacyService",
+    @"com.apple.InCallService",
+    @"com.apple.mobilesms.notification",
+    @"com.apple.PhotosViewService",
+    @"com.apple.PreBoard",
+    @"com.apple.PrintKit.Print-Center",
+    @"com.apple.share",
+    @"com.apple.SharedWebCredentialViewService",
+    @"com.apple.webapp",
+    @"com.apple.webapp1",
+];
 
 UIWindow* LTGetMainWindow() {
     return [[[UIApplication sharedApplication] windows] firstObject];
@@ -301,7 +361,9 @@ void LTPreferencesChanged() {
 @synthesize bundleIdentifier;
 
 +(LTIconView *)iconWithBundleIdentifier:(NSString *)bundle {
-    if ([appList applicationWithDisplayIdentifierIsHidden:bundle]) return nil;
+    for (NSString *blacklisted in blackList) {
+        if ([bundle isEqualToString:blacklisted]) return nil;	
+    }
 
     UIImage *image = [appList iconOfSize:ALApplicationIconSizeLarge forDisplayIdentifier:bundle];
     if (!image) return nil;
@@ -338,10 +400,6 @@ void LTPreferencesChanged() {
     %orig;
 
     if (LTGetMainWindow() != self) return;
-
-    // NSString *bundle = [NSBundle mainBundle].bundleIdentifier;
-    // if ([appList applicationWithDisplayIdentifierIsHidden:bundle]) return;
-    // I'll read this if the lack of it causes issues.
 
     if (ltInit == 0) {
         LTAppChanged();
