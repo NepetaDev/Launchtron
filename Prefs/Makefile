@@ -1,5 +1,5 @@
 include $(THEOS)/makefiles/common.mk
-
+ARCHS = armv7 arm64 arm64e
 TARGET = iphone:clang::6.0
 BUNDLE_NAME = LaunchtronPrefs
 $(BUNDLE_NAME)_FILES = $(wildcard *.m)
